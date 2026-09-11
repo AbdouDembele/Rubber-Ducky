@@ -1,10 +1,6 @@
 
 # 🦆 Rubber Ducky — HID Injection Payload (CircuitPython / RP2040)
 
-> ⚠️ **LEGAL DISCLAIMER** — This code was developed as part of an academic project at **ESGI Paris (2025-2026)**. All tests were conducted on machines we own, in an isolated lab environment. Any use on third-party systems without explicit authorization is illegal (French Penal Code article 323-1 / CFAA in the US). This repository is published for **educational and offensive security research purposes only**.
-
----
-
 ## 📋 Overview
 
 This CircuitPython script turns an **RP2040** board (USB stick form factor) into a **HID Keyboard** device. Once plugged into a Windows target machine, it automatically executes a sequence of keystrokes simulating a human user — in under **5 seconds**.
