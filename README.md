@@ -205,9 +205,6 @@ T+11.6s → All windows closed
 
 ## 🛡️ Detection (Blue Team)
 
-### Sigma Rules
-See the [`../detection/sigma_rules/`](../detection/sigma_rules/) folder for detection rules mapped to each technique used in this script.
-
 ### Key Detection Signals
 
 | Signal | Detection Tool |
@@ -227,6 +224,3 @@ See the [`../detection/sigma_rules/`](../detection/sigma_rules/) folder for dete
 
 ---
 
-Sortie
-
-exit code 0
