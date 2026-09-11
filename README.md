@@ -5,6 +5,9 @@
 
 This CircuitPython script turns an **RP2040** board (USB stick form factor) into a **HID Keyboard** device. Once plugged into a Windows target machine, it automatically executes a sequence of keystrokes simulating a human user — in under **5 seconds**.
 
+<img width="1001" height="1001" alt="image" src="https://github.com/user-attachments/assets/eb103f24-9387-47f8-b9cd-7eff8ec2d72f" />
+
+
 Full execution chain:
 1. Opens a CMD prompt via `Win+R`
 2. Launches PowerShell with administrator privileges
